@@ -19,7 +19,7 @@ This is a comprehensive image storage and management web application built with 
 
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/image-storage-app.git
+git clone https://github.com/aiartinnature/image-storage-app.git
 cd image-storage-app
 ```
 

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Search Images - Image Storage{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row mb-4">
+        <div class="col">
+            <h1>Search Images</h1>
+            <p class="text-muted">Search through your image collection by name, description, or prompt</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Search Filters</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('main.search_images') }}">
+                        <div class="mb-3">
+                            {{ form.search_query.label(class="form-label") }}
+                            {{ form.search_query(class="form-control" + (" is-invalid" if form.search_query.errors else ""), 
+                                               placeholder="Enter keywords...") }}
+                            {% for error in form.search_query.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.category.label(class="form-label") }}
+                            {{ form.category(class="form-select") }}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.subcategory.label(class="form-label") }}
+                            {{ form.subcategory(class="form-select") }}
+                        </div>
+
+                        {{ form.submit(class="btn btn-primary w-100") }}
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-8">
+            {% if images %}
+                <div class="row row-cols-1 row-cols-md-2 g-4">
+                    {% for image in images %}
+                    <div class="col">
+                        <div class="card h-100 image-card">
+                            <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
+                                 class="card-img-top image-thumbnail" 
+                                 alt="{{ image.name }}">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ image.name }}</h5>
+                                {% if image.description %}
+                                <p class="card-text">{{ image.description[:100] }}{% if image.description|length > 100 %}...{% endif %}</p>
+                                {% endif %}
+                                <div class="text-muted small mb-2">
+                                    {% if image.category %}
+                                    <span class="badge bg-primary">{{ image.category.name }}</span>
+                                    {% endif %}
+                                    {% if image.subcategory %}
+                                    <span class="badge bg-secondary">{{ image.subcategory.name }}</span>
+                                    {% endif %}
+                                </div>
+                                <a href="{{ url_for('main.image_details', image_id=image.id) }}" 
+                                   class="btn btn-outline-primary btn-sm">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> No images found matching your search criteria.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Update subcategories when category changes
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('category');
+    const subcategorySelect = document.getElementById('subcategory');
+    
+    function updateSubcategories() {
+        const categoryId = categorySelect.value;
+        
+        // Clear current options
+        subcategorySelect.innerHTML = '<option value="">All Subcategories</option>';
+        
+        if (categoryId && categoryId !== '0') {
+            fetch(`{{ url_for('main.get_subcategories', category_id=0) }}`.replace('0', categoryId))
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(subcategory => {
+                        const option = document.createElement('option');
+                        option.value = subcategory.id;
+                        option.textContent = subcategory.name;
+                        subcategorySelect.appendChild(option);
+                    });
+                });
+        }
+    }
+    
+    categorySelect.addEventListener('change', updateSubcategories);
+    
+    // Initial update if category is pre-selected
+    if (categorySelect.value) {
+        updateSubcategories();
+    }
+});
+</script>
+{% endblock %}

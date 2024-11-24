@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Edit {{ image.name }} - Image Storage{% endblock %}
+
+{% block content %}
+<div class="container">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('main.index') }}">Home</a></li>
+            <li class="breadcrumb-item"><a href="{{ url_for('main.image_details', image_id=image.id) }}">{{ image.name }}</a></li>
+            <li class="breadcrumb-item active">Edit</li>
+        </ol>
+    </nav>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="mb-0">Edit Image</h2>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <img src="{{ url_for('static', filename='uploads/' + image.filename) }}" 
+                             class="img-fluid rounded" 
+                             style="max-height: 300px;"
+                             alt="{{ image.name }}">
+                    </div>
+
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                            {% for error in form.name.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="3") }}
+                            {% for error in form.description.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="mb-3">
+                            {{ form.prompt.label(class="form-label") }}
+                            {{ form.prompt(class="form-control" + (" is-invalid" if form.prompt.errors else ""), rows="2") }}
+                            {% for error in form.prompt.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                {{ form.category.label(class="form-label") }}
+                                {{ form.category(class="form-select" + (" is-invalid" if form.category.errors else "")) }}
+                                {% for error in form.category.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                {{ form.subcategory.label(class="form-label") }}
+                                {{ form.subcategory(class="form-select" + (" is-invalid" if form.subcategory.errors else "")) }}
+                                {% for error in form.subcategory.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary") }}
+                            <a href="{{ url_for('main.image_details', image_id=image.id) }}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('category');
+    const subcategorySelect = document.getElementById('subcategory');
+    const currentCategory = '{{ image.category_id }}';
+    const currentSubcategory = '{{ image.subcategory_id }}';
+    
+    function updateSubcategories() {
+        const categoryId = categorySelect.value;
+        
+        // Clear current options
+        subcategorySelect.innerHTML = '<option value="">Select a subcategory</option>';
+        subcategorySelect.disabled = !categoryId;
+        
+        if (categoryId) {
+            fetch(`{{ url_for('main.get_subcategories', category_id=0) }}`.replace('0', categoryId))
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    data.forEach(subcategory => {
+                        const option = document.createElement('option');
+                        option.value = subcategory.id;
+                        option.textContent = subcategory.name;
+                        subcategorySelect.appendChild(option);
+                    });
+                    
+                    // Restore selected subcategory if it exists
+                    if (currentSubcategory) {
+                        subcategorySelect.value = currentSubcategory;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching subcategories:', error);
+                    subcategorySelect.innerHTML = '<option value="">Error loading subcategories</option>';
+                });
+        }
+    }
+    
+    categorySelect.addEventListener('change', updateSubcategories);
+    
+    // Set initial category value and load subcategories
+    if (currentCategory) {
+        categorySelect.value = currentCategory;
+        updateSubcategories();
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Image - Image Storage{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="mb-0">Upload New Image</h2>
+            </div>
+            <div class="card-body">
+                <form method="POST" enctype="multipart/form-data">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.name.label(class="form-label") }}
+                        {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                        {% for error in form.name.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.description.label(class="form-label") }}
+                        {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows="3") }}
+                        {% for error in form.description.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.prompt.label(class="form-label") }}
+                        {{ form.prompt(class="form-control" + (" is-invalid" if form.prompt.errors else ""), rows="2") }}
+                        {% for error in form.prompt.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            {{ form.category.label(class="form-label") }}
+                            {{ form.category(class="form-select" + (" is-invalid" if form.category.errors else "")) }}
+                            {% for error in form.category.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            {{ form.subcategory.label(class="form-label") }}
+                            {{ form.subcategory(class="form-select" + (" is-invalid" if form.subcategory.errors else "")) }}
+                            {% for error in form.subcategory.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        {{ form.image.label(class="form-label") }}
+                        {{ form.image(class="form-control" + (" is-invalid" if form.image.errors else ""), onchange="previewImage(this)") }}
+                        {% for error in form.image.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                        {% endfor %}
+                        <div id="imagePreview" class="mt-3 text-center" style="display: none;">
+                            <img id="preview" src="" alt="Preview" style="max-height: 300px; max-width: 100%;">
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        {{ form.submit(class="btn btn-primary btn-lg") }}
+                        <a href="{{ url_for('main.index') }}" class="btn btn-outline-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function previewImage(input) {
+    const preview = document.getElementById('preview');
+    const previewDiv = document.getElementById('imagePreview');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            previewDiv.style.display = 'block';
+        }
+        
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+// Update subcategories when category changes
+document.addEventListener('DOMContentLoaded', function() {
+    const categorySelect = document.getElementById('category');
+    const subcategorySelect = document.getElementById('subcategory');
+    
+    function updateSubcategories() {
+        const categoryId = categorySelect.value;
+        
+        // Clear current options
+        subcategorySelect.innerHTML = '<option value="">Select a subcategory</option>';
+        
+        if (categoryId) {
+            fetch(`{{ url_for('main.get_subcategories', category_id=0) }}`.replace('0', categoryId))
+                .then(response => response.json())
+                .then(data => {
+                    data.forEach(subcategory => {
+                        const option = document.createElement('option');
+                        option.value = subcategory.id;
+                        option.textContent = subcategory.name;
+                        subcategorySelect.appendChild(option);
+                    });
+                });
+        }
+    }
+    
+    categorySelect.addEventListener('change', updateSubcategories);
+    
+    // Initial update if category is pre-selected
+    if (categorySelect.value) {
+        updateSubcategories();
+    }
+});
+</script>
+{% endblock %}

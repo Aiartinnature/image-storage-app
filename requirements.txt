@@ -1,0 +1,7 @@
+flask==2.3.3
+flask-sqlalchemy==3.1.1
+sqlalchemy==2.0.23
+flask-wtf==1.2.1
+Pillow==10.0.0
+python-dotenv==1.0.0
+werkzeug==2.3.7
